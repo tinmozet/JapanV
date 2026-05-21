@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>မြန်မာ Free VPN Key ရှာဖွေရေးအက်ပ်</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 15px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { text-align: center; color: #1a73e8; font-size: 22px; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; font-size: 13px; margin-bottom: 20px; }
+        .btn-refresh { width: 100%; padding: 12px; background-color: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
+        .loading { text-align: center; font-weight: bold; color: #666; padding: 20px; display: none; }
+        
+        /* VPN Card Style */
+        .vpn-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #34a853; }
+        .vpn-info b { font-size: 16px; color: #111; }
+        .vpn-info div { font-size: 13px; color: #666; margin-top: 3px; }
+        .badge { display: inline-block; padding: 3px 6px; background: #e8f0fe; color: #1a73e8; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .btn-download { padding: 10px 14px; background-color: #34a853; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🇲🇲 Free VPN Keys Finder</h1>
+    <div class="subtitle">OpenVPN အကောင့်ကီးများကို အချိန်နဲ့တပြေးညီ ရှာဖွေပေးပါသည်။</div>
+    
+    <button class="btn-refresh" onclick="fetchVPNKeys()">🔄 VPN Key အသစ်များ ရှာမည်</button>
+    
+    <div id="loadingStatus" class="loading">⏳ Server တွေဆီကနေ VPN Key တွက်ချက်ရှာဖွေနေပါတယ် ဆရာ...</div>
+    <div id="vpnListDisplay"></div>
+</div>
+
+<script>
+    // ⚠️ ဆရာ့ရဲ့ Render Backend URL ထွက်လာတဲ့အခါ ဒီနေရာမှာ အစားထိုးပေးရပါမယ်
+    const BACKEND_URL = "http://127.0.0.1:5000/api/vpnkeys"; 
+
+    async function fetchVPNKeys() {
+        const listDisplay = document.getElementById("vpnListDisplay");
+        const loading = document.getElementById("loadingStatus");
+        
+        listDisplay.innerHTML = "";
+        loading.style.display = "block";
+        
+        try {
+            const response = await fetch(BACKEND_URL);
+            const resData = await response.json();
+            loading.style.display = "none";
+            
+            if(resData.status === "success" && resData.data.length > 0) {
+                resData.data.forEach(vpn => {
+                    listDisplay.innerHTML += `
+                        <div class="vpn-card">
+                            <div class="vpn-info">
+                                <b>📍 ${vpn.country} (${vpn.country_code})</b> <span class="badge">${vpn.speed}</span>
+                                <div>🌐 IP: ${vpn.ip} | ⚡ Ping: ${vpn.ping} ms</div>
+                            </div>
+                            <button class="btn-download" onclick="downloadConfig('${vpn.host}', '${vpn.config_b64}')">📥 Get Key</button>
+                        </div>
+                    `;
+                });
+            } else {
+                listDisplay.innerHTML = "<p style='text-align:center; color:red;'>လတ်တလော VPN Key ရှာမတွေ့ပါသဖြင့် ခဏနေမှ ပြန်ကြိုးစားပါ ဆရာ။</p>";
+            }
+        } catch (error) {
+            loading.style.display = "none";
+            listDisplay.innerHTML = "<p style='text-align:center; color:red;'>Backend API သို့ လှမ်းချိတ်လို့ မရနိုင်ဖြစ်နေပါတယ် ဆရာ။</p>";
+            console.error(error);
+        }
+    }
+
+    // Base64 ကီးကို .ovpn ဖိုင်အဖြစ် ပြောင်းလဲပြီး ဖုန်းထဲ ဒေါင်းလုဒ်ချပေးမည့် လုပ်ဆောင်ချက်
+    function downloadConfig(host, base64Str) {
+        try {
+            const decodedConfig = atob(base64Str);
+            const blob = new Blob([decodedConfig], { type: 'application/x-openvpn-profile' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${host}_free_vpn.ovpn`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch(e) {
+            alert("ဖိုင်ထုတ်ယူရာတွင် အမှားအယွင်းရှိသွားပါသည် ဆရာ။");
+        }
+    }
+
+    // အက်ပ်ပွင့်ပွင့်ချင်း အလိုအလျောက် ရှာခိုင်းခြင်း
+    window.onload = fetchVPNKeys;
+</script>
+</body>
+</html>
