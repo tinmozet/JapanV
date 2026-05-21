@@ -33,10 +33,10 @@
 </div>
 
 <script>
-    // ⚠️ ဆရာ့ရဲ့ Render Backend URL ထွက်လာတဲ့အခါ ဒီနေရာမှာ အစားထိုးပေးရပါမယ်
-    //const BACKEND_URL = "http://127.0.0.1:5000/api/vpnkeys"; 
     const BACKEND_URL = "https://japanv.onrender.com/api/vpnkeys"; 
 
+    // VPN ဒေတာတွေကို ခေတ္တသိမ်းဆည်းထားမည့် Global Variable
+    window.vpnDataStore = {};
 
     async function fetchVPNKeys() {
         const listDisplay = document.getElementById("vpnListDisplay");
@@ -51,14 +51,20 @@
             loading.style.display = "none";
             
             if(resData.status === "success" && resData.data.length > 0) {
-                resData.data.forEach(vpn => {
+                // လက်ရှိရလာတဲ့ ဒေတာအသစ်တွေကို သိမ်းဆည်းခြင်း
+                window.vpnDataStore = {};
+                
+                resData.data.forEach((vpn, index) => {
+                    // စာသားရှည်ကြီးတွေ HTML ထဲမရောက်အောင် Memory ထဲမှာ Index နဲ့ မှတ်ထားခြင်း
+                    window.vpnDataStore[index] = vpn.config_b64;
+
                     listDisplay.innerHTML += `
                         <div class="vpn-card">
                             <div class="vpn-info">
                                 <b>📍 ${vpn.country} (${vpn.country_code})</b> <span class="badge">${vpn.speed}</span>
                                 <div>🌐 IP: ${vpn.ip} | ⚡ Ping: ${vpn.ping} ms</div>
                             </div>
-                            <button class="btn-download" onclick="downloadConfig('${vpn.host}', '${vpn.config_b64}')">📥 Get Key</button>
+                            <button class="btn-download" onclick="downloadConfig('${vpn.host}', ${index})">📥 Get Key</button>
                         </div>
                     `;
                 });
@@ -72,40 +78,48 @@
         }
     }
 
-    // Base64 ကီးကို .ovpn ဖိုင်အဖြစ် ပြောင်းလဲပြီး ဖုန်းထဲ ဒေါင်းလုဒ်ချပေးမည့် လုပ်ဆောင်ချက်
-    function downloadConfig(host, base64Str) {
-    try {
-        // Base64 ကို Binary အဖြစ် ပြောင်းလဲခြင်း
-        const byteCharacters = atob(base64Str.trim());
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
+    // ဒေါင်းလုဒ်လုပ်ဆောင်ချက် (Index ကို သုံးပြီး Memory ထဲကနေ လှမ်းယူစနစ်)
+    function downloadConfig(host, index) {
+        try {
+            const base64Str = window.vpnDataStore[index];
+            if (!base64Str) {
+                alert("ဒေတာ ရှာမတွေ့ပါ ဆရာ။");
+                return;
+            }
+
+            // စာသားထဲက လိုင်းအလွတ်များနှင့် ကွက်လပ်များကို သန့်စင်ခြင်း
+            const cleanedBase64 = base64Str.replace(/\s/g, '');
+            
+            // Base64 ကို Binary အဖြစ် ပြောင်းလဲခြင်း
+            const byteCharacters = atob(cleanedBase64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            
+            // ဖုန်း Browser မျိုးစုံ သဘောပေါက်သည့် text/x-openvpn MIME Type သုံးခြင်း
+            const blob = new Blob([byteArray], { type: 'text/x-openvpn' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${host}_free_vpn.ovpn`;
+            
+            // DOM ထဲ ခေတ္တထည့်သွင်း၍ နှိပ်ခိုင်းခြင်း (iOS/Android Browser လုံခြုံရေး ကျော်လွှားရန်)
+            document.body.appendChild(link);
+            link.click();
+            
+            // သန့်ရှင်းရေး ပြန်လုပ်ခြင်း
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            }, 100);
+
+        } catch(e) {
+            alert("ဖိုင်ဒေါင်းလုဒ်လုပ်ရာတွင် အမှားအယွင်းရှိသွားပါသည် ဆရာ။ အခြားဆာဗာတစ်ခုဖြင့် ပြန်စမ်းကြည့်ပေးပါဗျာ။");
+            console.error(e);
         }
-        const byteArray = new Uint8Array(byteNumbers);
-        
-        // ဖုန်းတိုင်း၊ Browser တိုင်း သိရှိနိုင်မည့် Standard Binary Octet-Stream အဖြစ် ပြောင်းလဲခြင်း
-        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
-        
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${host}_free_vpn.ovpn`;
-        
-        // Browser လုံခြုံရေးကျော်လွှားရန် link ကို Body ထဲ ခေတ္တထည့်သွင်းပြီးမှ နှိပ်ခိုင်းခြင်း
-        document.body.appendChild(link);
-        link.click();
-        
-        // နှိပ်ပြီးလျှင် ပြန်ဖျက်ပစ်ခြင်း
-        setTimeout(() => {
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-        }, 100);
-
-    } catch(e) {
-        alert("ဖိုင်ထုတ်ယူရာတွင် အမှားအယွင်းရှိသွားပါသည် ဆရာ။ ဒေတာ မပြည့်စုံခြင်းကြောင့် ဖြစ်နိုင်ပါသည်။");
-        console.error(e);
     }
-}
-
 
     // အက်ပ်ပွင့်ပွင့်ချင်း အလိုအလျောက် ရှာခိုင်းခြင်း
     window.onload = fetchVPNKeys;
