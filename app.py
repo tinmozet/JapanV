@@ -2,93 +2,97 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 import requests
+import base64
 
 app = Flask(__name__)
-CORS(app) # Frontend က လှမ်းခေါ်ခွင့်ပြုရန်
+CORS(app)
 
-VPNGATE_API_URL = "http://www.vpngate.net/api/iphone/"
+# 🌐 အင်တာနက်ပေါ်မှ အချိန်နဲ့တပြေးညီ Update ဖြစ်နေသော Premium VPN Node Sources များ
+VPN_SOURCES = [
+    "https://raw.githubusercontent.com/freefq/free/master/v2ray",
+    "https://raw.githubusercontent.com/vfarid/v2ray-share/main/all_links.txt",
+    "https://raw.githubusercontent.com/Pawdroid/Free-V2ray/main/v2ray"
+]
 
 @app.route('/api/vpnkeys', methods=['GET'])
-def get_vpn_keys():
+def get_stable_vpn_keys():
     try:
-        # VPN Gate ဆီကနေ အကောင့် Keys ဒေတာများ Fetch လုပ်ခြင်း (Timeout 15 စက္ကန့်)
-        response = requests.get(VPNGATE_API_URL, timeout=15)
-        text_data = response.text
+        raw_keys = []
         
-        lines = text_data.split('\n')
-        vpn_list = []
-        
-        for line in lines:
-            line = line.strip()
-            if line.startswith('*') or line.startswith('#') or not line:
-                continue
-                
-            parts = line.split(',')
-            if len(parts) < 15:
-                continue
-                
-            host_name = parts[0]
-            ip_address = parts[1]
-            ping = parts[3]
-            speed = int(parts[4]) if parts[4].isdigit() else 0
-            country_long = parts[5]
-            country_short = parts[6]
-            vpn_config_base64 = parts[14].strip()
-            
-            # ဒေတာမပြည့်စုံလျှင် ကျော်သွားရန်
-            if not vpn_config_base64 or len(vpn_config_base64) < 100:
-                continue
-
-            # 💡 [အရေးကြီးဆုံး ပြင်ဆင်ချက်] - Base64 ကုဒ်ကို Decode လုပ်ပြီး အတွင်းပိုင်းကို စစ်ဆေးခြင်း
+        # 📥 ဇစ်မြစ် Website များဆီကနေ ဒေတာ လှမ်းဆွဲခြင်း
+        for url in VPN_SOURCES:
             try:
-                import base64
-                decoded_text = base64.b64decode(vpn_config_base64).decode('utf-8', errors='ignore')
-                
-                # မြန်မာပြည်တွင် UDP Port များကို ပိတ်ထားသဖြင့် "proto tcp" (TCP စနစ်) သုံးထားသော ကီးများကိုသာ ယူမည်
-                if "proto tcp" not in decoded_text.lower():
-                    continue # UDP ဖြစ်ပါက ချန်လှပ်ခဲ့ပြီး နောက်တစ်လိုင်းသို့ သွားမည်
+                res = requests.get(url, timeout=12)
+                if res.status_code == 200:
+                    text = res.text
                     
-            except Exception:
-                continue # Base64 ဖတ်မရပါက ကျော်သွားရန်
+                    # ဒေတာက Base64 စာသားထုပ်ကြီး ဖြစ်နေပါက Decode လုပ်ရန်
+                    if "vmess://" not in text and "ss://" not in text and "vless://" not in text:
+                        try:
+                            text = base64.b64decode(text.strip()).decode('utf-8', errors='ignore')
+                        except:
+                            pass
+                    
+                    lines = text.split('\n')
+                    raw_keys.extend([l.strip() for l in lines if l.strip()])
+            except:
+                continue
 
-            vpn_list.append({
-                "host": host_name,
-                "ip": ip_address,
-                "ping": ping,
-                "speed": f"{round(speed / 1000000, 2)} Mbps" if speed > 0 else "N/A",
-                "speed_raw": speed,
-                "country": country_long,
-                "country_code": country_short,
-                "config_b64": vpn_config_base64
-            })
+        vpn_list = []
+        # 🇲🇲 မြန်မာပြည်နှင့် ပင်လယ်ရေအောက်ကေဘယ် တိုက်ရိုက်ချိတ်ဆက်ထားပြီး Ping အနည်းဆုံး နိုင်ငံများ
+        priority_countries = {
+            "SG": "Singapore 🇸🇬",
+            "HK": "Hong Kong 🇭🇰",
+            "JP": "Japan 🇯🇵",
+            "TW": "Taiwan 🇹🇼",
+            "KR": "Korea 🇰🇷",
+            "US": "United States 🇺🇸"
+        }
         
-        # ⚡ လိုင်းအမြန်ဆုံး Server များကို အရင်စီခြင်း
-        sorted_vpns = sorted(vpn_list, key=lambda x: x['speed_raw'], reverse=True)
+        # ဒေတာများကို တစ်ခုချင်းစီ သန့်စင်စစ်ထုတ်ခြင်း
+        for key in raw_keys:
+            if not (key.startswith("ss://") or key.startswith("vmess://") or key.startswith("vless://") or key.startswith("trojan://")):
+                continue
 
-        # 🌍 နိုင်ငံစုံ စုံစုံလင်လင် ပါဝင်စေရန် စစ်ထုတ်မည့် စနစ် (Country-Based Round Robin)
-        final_vpn_list = []
-        seen_countries = {}
-
-        for vpn in sorted_vpns:
-            c_code = vpn['country_code']
-            if c_code not in seen_countries:
-                seen_countries[c_code] = 0
+            # နိုင်ငံ ခွဲခြားသတ်မှတ်ခြင်း Logic
+            detected_country = "Global Server 🌐"
+            detected_code = "GL"
             
-            # နိုင်ငံတစ်ခုတည်းက ဆာဗာတွေချည်းပဲ အများကြီး မပြွတ်သိပ်နေအောင် 
-            # တစ်နိုင်ငံလျှင် အကောင်းဆုံး ဆာဗာ ၃ ခု ထက်ပိုမယူဘဲ ကန့်သတ်ခြင်း (ဒါမှ နိုင်ငံစုံ စုံလင်စွာ ပေါ်လာပါမည်)
-            if seen_countries[c_code] < 3:
-                final_vpn_list.append(vpn)
-                seen_countries[c_code] += 1
-                
-            # စုစုပေါင်း ကီးအခု ၂၀ ပြည့်ပါက ရပ်တန့်မည်
-            if len(final_vpn_list) >= 20:
+            key_upper = key.upper()
+            for code, name in priority_countries.items():
+                if code in key_upper or name.split()[0].upper() in key_upper:
+                    detected_code = code
+                    detected_country = name
+                    break
+
+            # ကီး အမျိုးအစား ခွဲခြားခြင်း (ဥပမာ - VMESS, VLESS, SS)
+            vpn_type = key.split("://")[0].upper()
+            
+            # Frontend ထဲ သွားတဲ့အခါ ကုဒ်မပဲ့အောင် Base64 အဖြစ် ခေတ္တပြောင်းသိမ်းခြင်း
+            encoded_key = base64.b64encode(key.encode('utf-8')).decode('utf-8')
+            
+            vpn_list.append({
+                "country": detected_country,
+                "country_code": detected_code,
+                "type": vpn_type,
+                "config_b64": encoded_key
+            })
+
+        # 🔄 Priority နိုင်ငံများကို ထိပ်ဆုံးကပြပြီး နိုင်ငံစုံမျှအောင် အပုဒ် ၂၅ သာ စစ်ထုတ်ယူခြင်း
+        vpn_list = sorted(vpn_list, key=lambda x: x['country_code'] in priority_countries.keys(), reverse=True)
+        
+        # တစ်နိုင်ငံတည်း ချည်းပဲ ပြွတ်သိပ်မနေအောင် ဒေတာကို ခပ်ကျဲကျဲ စစ်ထုတ်ခြင်း
+        final_list = []
+        counts = {}
+        for item in vpn_list:
+            code = item['country_code']
+            counts[code] = counts.get(code, 0) + 1
+            if counts[code] <= 4: # တစ်နိုင်ငံလျှင် အများဆုံး ၄ လိုင်းစီသာ ပြမည်
+                final_list.append(item)
+            if len(final_list) >= 25:
                 break
 
-        # ဒေတာ သန့်ရှင်းရေးအတွက် speed_raw ကို ပြန်ဖျက်ခြင်း
-        for v in final_vpn_list:
-            v.pop('speed_raw', None)
-
-        return jsonify({"status": "success", "data": final_vpn_list})
+        return jsonify({"status": "success", "data": final_list})
         
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
