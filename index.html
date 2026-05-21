@@ -3,39 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>မြန်မာ Free VPN Key ရှာဖွေရေးအက်ပ်</title>
+    <title>မြန်မာ Premium Free VPN Keys Finder</title>
     <style>
-        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 15px; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; }
-        h1 { text-align: center; color: #1a73e8; font-size: 22px; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #666; font-size: 13px; margin-bottom: 20px; }
-        .btn-refresh { width: 100%; padding: 12px; background-color: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
-        .loading { text-align: center; font-weight: bold; color: #666; padding: 20px; display: none; }
+        :root {
+            --primary: #1a73e8;
+            --success: #34a853;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #202124;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--bg); 
+            margin: 0; 
+            padding: 15px; 
+            color: var(--text); 
+        }
+        .container { max-width: 550px; margin: 0 auto; }
         
-        /* VPN Card Style */
-        .vpn-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #34a853; }
-        .vpn-info b { font-size: 16px; color: #111; }
-        .vpn-info div { font-size: 13px; color: #666; margin-top: 3px; }
-        .badge { display: inline-block; padding: 3px 6px; background: #e8f0fe; color: #1a73e8; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .btn-download { padding: 10px 14px; background-color: #34a853; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        /* Header Box Design */
+        .header-box {
+            text-align: center;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 25px 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 { margin: 0; font-size: 24px; font-weight: 700; }
+        .subtitle { margin-top: 8px; font-size: 13px; opacity: 0.9; }
+        
+        .btn-refresh { 
+            width: 100%; 
+            padding: 14px; 
+            background-color: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            box-shadow: 0 2px 5px rgba(26,115,232,0.3);
+            transition: 0.2s;
+        }
+        .btn-refresh:active { transform: scale(0.98); }
+        
+        .loading { 
+            text-align: center; 
+            font-weight: bold; 
+            color: #5f6368; 
+            padding: 30px; 
+            display: none; 
+        }
+        
+        /* Premium VPN Card Style */
+        .vpn-card { 
+            background: var(--card-bg); 
+            border-radius: 10px; 
+            padding: 16px; 
+            margin-bottom: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-left: 6px solid var(--success);
+        }
+        .vpn-info b { font-size: 16px; color: #111; display: block; margin-bottom: 4px; }
+        .vpn-info div { font-size: 12px; color: #5f6368; }
+        .badge { 
+            display: inline-block; 
+            padding: 3px 8px; 
+            background: #e8f0fe; 
+            color: var(--primary); 
+            border-radius: 20px; 
+            font-size: 11px; 
+            font-weight: bold; 
+            margin-top: 5px;
+        }
+        .btn-copy { 
+            padding: 10px 16px; 
+            background-color: var(--success); 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 13px; 
+            box-shadow: 0 2px 4px rgba(52,168,83,0.2);
+        }
+        .btn-copy:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🇲🇲 Free VPN Keys Finder</h1>
-    <div class="subtitle">OpenVPN အကောင့်ကီးများကို အချိန်နဲ့တပြေးညီ ရှာဖွေပေးပါသည်။</div>
+    <div class="header-box">
+        <h1>🇲🇲 Premium VPN Keys Finder</h1>
+        <div class="subtitle">မြန်မာပြည်အတွက် အပိတ်ရခက်ပြီး လိုင်းအငြိမ်ဆုံး V2Ray / Shadowsocks သော့ချက်များ</div>
+    </div>
     
-    <button class="btn-refresh" onclick="fetchVPNKeys()">🔄 VPN Key အသစ်များ ရှာမည်</button>
+    <button class="btn-refresh" onclick="fetchVPNKeys()">🔄 လိုင်းအငြိမ်ဆုံး Key များ ရှာမည်</button>
     
-    <div id="loadingStatus" class="loading">⏳ Server တွေဆီကနေ VPN Key တွက်ချက်ရှာဖွေနေပါတယ် ဆရာ...</div>
+    <div id="loadingStatus" class="loading">⏳ Server များထံမှ အပိတ်ရခက်သော နည်းပညာသစ် သော့ချက်များကို ရှာဖွေနေပါသည် ဆရာသမား...</div>
     <div id="vpnListDisplay"></div>
 </div>
 
 <script>
+    // ⚠️ ဆရာ့ရဲ့ Render Backend API URL
     const BACKEND_URL = "https://japanv.onrender.com/api/vpnkeys"; 
 
-    // VPN ဒေတာတွေကို ခေတ္တသိမ်းဆည်းထားမည့် Global Variable
+    // ကီးများကို ခေတ္တသိမ်းထားရန် Global Store
     window.vpnDataStore = {};
 
     async function fetchVPNKeys() {
@@ -51,77 +129,58 @@
             loading.style.display = "none";
             
             if(resData.status === "success" && resData.data.length > 0) {
-                // လက်ရှိရလာတဲ့ ဒေတာအသစ်တွေကို သိမ်းဆည်းခြင်း
-                window.vpnDataStore = {};
+                window.vpnDataStore = {}; // ရှင်းလင်းရေးလုပ်ခြင်း
                 
                 resData.data.forEach((vpn, index) => {
-                    // စာသားရှည်ကြီးတွေ HTML ထဲမရောက်အောင် Memory ထဲမှာ Index နဲ့ မှတ်ထားခြင်း
+                    // ကီးစာသားများကို Memory ထဲသို့ ထည့်သွင်းခြင်း
                     window.vpnDataStore[index] = vpn.config_b64;
 
+                    // ကတ်ပြားပုံစံအလိုက် UI ချပြခြင်း
                     listDisplay.innerHTML += `
-                        <div class="vpn-card">
+                        <div class="vpn-card" style="border-left-color: ${vpn.type === 'SS' ? '#f39c12' : '#34a853'}">
                             <div class="vpn-info">
-                                <b>📍 ${vpn.country} (${vpn.country_code})</b> <span class="badge">${vpn.speed}</span>
-                                <div>🌐 IP: ${vpn.ip} | ⚡ Ping: ${vpn.ping} ms</div>
+                                <b>📍 ${vpn.country}</b> 
+                                <div>🌐 Protocol: <span class="badge">${vpn.type} Node</span></div>
                             </div>
-                            <button class="btn-download" onclick="downloadConfig('${vpn.host}', ${index})">📥 Get Key</button>
+                            <button class="btn-copy" style="background-color: ${vpn.type === 'SS' ? '#f39c12' : '#34a853'}" onclick="copyV2RayKey(${index})">📋 Copy Key</button>
                         </div>
                     `;
                 });
             } else {
-                listDisplay.innerHTML = "<p style='text-align:center; color:red;'>လတ်တလော VPN Key ရှာမတွေ့ပါသဖြင့် ခဏနေမှ ပြန်ကြိုးစားပါ ဆရာ။</p>";
+                listDisplay.innerHTML = "<p style='text-align:center; color:red; padding:20px;'>လတ်တလော လိုင်းကောင်းသော သော့ချက်များ ရှာမတွေ့သေးပါ။ ခဏနေမှ ပြန်စမ်းပါ ဆရာ။</p>";
             }
         } catch (error) {
             loading.style.display = "none";
-            listDisplay.innerHTML = "<p style='text-align:center; color:red;'>Backend API သို့ လှမ်းချိတ်လို့ မရနိုင်ဖြစ်နေပါတယ် ဆရာ။</p>";
+            listDisplay.innerHTML = "<p style='text-align:center; color:red; padding:20px;'>⚠️ Backend Server သို့ ချိတ်ဆက်၍ မရနိုင်ဖြစ်နေပါသည် ဆရာသမား။</p>";
             console.error(error);
         }
     }
 
-    // ဒေါင်းလုဒ်လုပ်ဆောင်ချက် (Index ကို သုံးပြီး Memory ထဲကနေ လှမ်းယူစနစ်)
-    function downloadConfig(host, index) {
+    // ကီးများကို စာသားအဖြစ် အမှားအယွင်းမရှိ ကော်ပီကူးယူပေးမည့် စနစ်
+    function copyV2RayKey(index) {
         try {
             const base64Str = window.vpnDataStore[index];
-            if (!base64Str) {
-                alert("ဒေတာ ရှာမတွေ့ပါ ဆရာ။");
-                return;
-            }
+            if (!base64Str) return;
 
-            // စာသားထဲက လိုင်းအလွတ်များနှင့် ကွက်လပ်များကို သန့်စင်ခြင်း
-            const cleanedBase64 = base64Str.replace(/\s/g, '');
+            // မူရင်း vmess:// သို့မဟုတ် ss:// လင့်ခ်စာသားကို ပြန်ဖော်ခြင်း
+            const actualKey = atob(base64Str.trim());
             
-            // Base64 ကို Binary အဖြစ် ပြောင်းလဲခြင်း
-            const byteCharacters = atob(cleanedBase64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            
-            // ဖုန်း Browser မျိုးစုံ သဘောပေါက်သည့် text/x-openvpn MIME Type သုံးခြင်း
-            const blob = new Blob([byteArray], { type: 'text/x-openvpn' });
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${host}_free_vpn.ovpn`;
-            
-            // DOM ထဲ ခေတ္တထည့်သွင်း၍ နှိပ်ခိုင်းခြင်း (iOS/Android Browser လုံခြုံရေး ကျော်လွှားရန်)
-            document.body.appendChild(link);
-            link.click();
-            
-            // သန့်ရှင်းရေး ပြန်လုပ်ခြင်း
-            setTimeout(() => {
-                document.body.removeChild(link);
-                URL.revokeObjectURL(link.href);
-            }, 100);
+            // Clipboard ထဲသို့ ကူးထည့်ခြင်း
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = actualKey;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempTextArea);
 
+            alert("✅ VPN Key ကို ကော်ပီကူးယူပြီးပါပြီ ဆရာသမား။\n\nv2rayNG သို့မဟုတ် Nekobox အက်ပ်ထဲတွင် '+' ကိုနှိပ်ပြီး 'Import config from Clipboard' လုပ်ကာ ချိတ်ဆက်နိုင်ပါပြီဗျာ။");
         } catch(e) {
-            alert("ဖိုင်ဒေါင်းလုဒ်လုပ်ရာတွင် အမှားအယွင်းရှိသွားပါသည် ဆရာ။ အခြားဆာဗာတစ်ခုဖြင့် ပြန်စမ်းကြည့်ပေးပါဗျာ။");
+            alert("❌ ကော်ပီကူးရာတွင် အမှားအယွင်းရှိသွားပါသည်။");
             console.error(e);
         }
     }
 
-    // အက်ပ်ပွင့်ပွင့်ချင်း အလိုအလျောက် ရှာခိုင်းခြင်း
+    // အက်ပ်ဖွင့်ဖွင့်ချင်း အလိုအလျောက် သော့ချက်ရှာခိုင်းခြင်း
     window.onload = fetchVPNKeys;
 </script>
 </body>
