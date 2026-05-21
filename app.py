@@ -7,106 +7,87 @@ import base64
 app = Flask(__name__)
 CORS(app)
 
-# 🌐 2026 ခုနှစ်၏ လိုင်းအကောင်းဆုံး၊ အမြန်ဆုံးနှင့် သက်တမ်းအမြဲသစ်သော Premium Core Sources များ
-VPN_SOURCES = [
-    "https://raw.githubusercontent.com/ebrasha/free-v2ray-public-list/main/all_extracted_configs.txt", # ⚡ 15 မိနစ်တစ်ခါ Update ဖြစ်သော Source သစ်
-    "https://raw.githubusercontent.com/freefq/free/master/v2ray",
-    "https://raw.githubusercontent.com/vfarid/v2ray-share/main/all_links.txt",
-    "https://raw.githubusercontent.com/w1770946466/Auto_Proxy/main/Long_term_subscription_num",
-    "https://raw.githubusercontent.com/Pawdroid/Free-V2ray/main/v2ray"
-]
+VPNGATE_API_URL = "http://www.vpngate.net/api/iphone/"
 
 @app.route('/api/vpnkeys', methods=['GET'])
-def get_stable_vpn_keys():
+def get_stable_openvpn_keys():
     try:
-        raw_keys = []
+        response = requests.get(VPNGATE_API_URL, timeout=12)
+        text_data = response.text
         
-        # 📥 Sources တစ်ခုချင်းစီမှ Premium ဒေတာများ လှမ်းယူခြင်း
-        for url in VPN_SOURCES:
-            try:
-                res = requests.get(url, timeout=8) # လိုင်းနှေးသော Source ကြောင့် မကြန့်ကြာစေရန် 8s သာ စောင့်မည်
-                if res.status_code == 200:
-                    text = res.text.strip()
-                    if not text:
-                        continue
-                        
-                    # Base64 ကုဒ်ထုပ်ကြီး ဖြစ်နေပါက Decode လုပ်ရန်
-                    if not any(p in text for p in ["vmess://", "vless://", "ss://", "hysteria2://"]):
-                        try:
-                            cleaned_text = text.replace('\n', '').replace('\r', '').strip()
-                            text = base64.b64decode(cleaned_text).decode('utf-8', errors='ignore')
-                        except:
-                            pass
-                    
-                    lines = text.split('\n')
-                    for l in lines:
-                        l = l.strip()
-                        # ခေတ်မီပြီး အပိတ်ရခက်သော Protocols များကို စစ်ထုတ်ယူခြင်း
-                        if l and any(l.startswith(p) for p in ["ss://", "vmess://", "vless://", "trojan://", "hysteria2://", "tuic://"]):
-                            raw_keys.append(l)
-            except:
-                continue
-
-        # ဒေတာလုံးဝမရရှိပါက ပေါ်ပေးမည့် စိတ်ချရသော အရန် Nodes များ
-        if not raw_keys:
-            raw_keys = [
-                "vless://6c5g7g4e-b643-44f3-8dd5-48b6432022e3@128.199.65.12:443?encryption=none&security=reality&sni=www.google.com&fp=chrome#Singapore_Premium_Reality",
-                "ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTo2Y0M1RzZ0Z3Y0ZTI@139.59.220.50:443#Japan_Stable_SS"
-            ]
-
+        lines = text_data.split('\n')
         vpn_list = []
-        # မြန်မာပြည်နှင့် အနီးဆုံးဖြစ်ပြီး Route လမ်းကြောင်းအကောင်းဆုံးနိုင်ငံများ
-        priority_countries = {
-            "SG": "Singapore 🇸🇬 Premium",
-            "HK": "Hong Kong 🇭🇰 Premium",
-            "JP": "Japan 🇯🇵 Stable",
-            "TW": "Taiwan 🇹🇼 High-Speed",
-            "KR": "Korea 🇰🇷 Stable",
-            "US": "United States 🇺🇸 Extra"
+        
+        # 🇲🇲 မြန်မာပြည်နှင့် အနီးဆုံးဖြစ်ပြီး လိုင်းအငြိမ်ဆုံး OpenVPN နိုင်ငံများ
+        allowed_countries = {
+            "SG": "Singapore 🇸🇬",
+            "JP": "Japan 🇯🇵",
+            "KR": "Korea 🇰🇷",
+            "TH": "Thailand 🇹🇭",
+            "TW": "Taiwan 🇹🇼"
         }
         
-        for key in raw_keys:
-            detected_country = "Global Premium Node 🌐"
-            detected_code = "GL"
+        for line in lines:
+            line = line.strip()
+            if line.startswith('*') or line.startswith('#') or not line:
+                continue
+                
+            parts = line.split(',')
+            if len(parts) < 15:
+                continue
+                
+            host_name = parts[0]
+            ip_address = parts[1]
+            ping = parts[3]
+            speed = int(parts[4]) if parts[4].isdigit() else 0
+            country_short = parts[6].upper()
+            vpn_config_base64 = parts[14].strip()
             
-            key_upper = key.upper()
-            for code, name in priority_countries.items():
-                if code in key_upper or name.split()[0].upper() in key_upper:
-                    detected_code = code
-                    detected_country = name
-                    break
+            if not vpn_config_base64 or len(vpn_config_base64) < 100:
+                continue
 
-            # 💡 Reality စနစ် သုံးထားပါက အထူးအမှတ်အသားပြုလုပ်ရန်
-            vpn_type = key.split("://")[0].upper()
-            if "SECURITY=REALITY" in key_upper:
-                vpn_type = "REALITY (VLESS)"
-            elif vpn_type == "HYSTERIA2":
-                vpn_type = "HYSTERIA 2"
+            # 💡 [မြန်မာပြည်အတွက် အဓိက သော့ချက်] - နိုင်ငံနှင့် TCP စနစ်ကိုသာ စစ်ထုတ်ခြင်း
+            if country_short not in allowed_countries:
+                continue # သတ်မှတ်နိုင်ငံမဟုတ်ပါက ကျော်မည်
 
             try:
-                encoded_key = base64.b64encode(key.encode('utf-8')).decode('utf-8')
-                vpn_list.append({
-                    "country": detected_country,
-                    "country_code": detected_code,
-                    "type": vpn_type,
-                    "config_b64": encoded_key
-                })
+                decoded_text = base64.b64decode(vpn_config_base64).decode('utf-8', errors='ignore')
+                
+                # အော်ပရေတာများ ပိတ်ရခက်ခဲသော TCP စနစ်ဖြစ်ပြီး၊ Port 443 သို့မဟုတ် 995 ဖြစ်သော ကီးများကိုသာ ရွေးမည်
+                if "proto tcp" not in decoded_text.lower():
+                    continue
+                if not any(p in decoded_text for p in ["port 443", "port 995", "port 1195", "port 53"]):
+                    continue
             except:
                 continue
 
-        # 🔄 စင်ကာပူးနှင့် ဂျပန်ကဲ့သို့ အငြိမ်ဆုံးနိုင်ငံများကို ဦးစားပေး ထိပ်ဆုံးတင်ခြင်း
-        vpn_list = sorted(vpn_list, key=lambda x: x['country_code'] in ["SG", "HK", "JP", "TW"], reverse=True)
+            vpn_list.append({
+                "host": host_name,
+                "ip": ip_address,
+                "ping": ping,
+                "speed": f"{round(speed / 1000000, 2)} Mbps" if speed > 0 else "N/A",
+                "speed_raw": speed,
+                "country": allowed_countries[country_short],
+                "country_code": country_short,
+                "config_b64": vpn_config_base64
+            })
         
-        # တစ်နိုင်ငံတည်းမှ ဆာဗာများ ပြွတ်သိပ်မနေစေဘဲ အကောင်းဆုံး Nodes များကိုသာ ရွေးချယ်ခြင်း
+        # လိုင်းအမြန်ဆုံးဆာဗာများကို အရင်စီခြင်း
+        sorted_vpns = sorted(vpn_list, key=lambda x: x['speed_raw'], reverse=True)
+
+        # တစ်နိုင်ငံတည်းက ဆာဗာတွေချည်းပဲ မပြွတ်သိပ်နေအောင် စစ်ထုတ်ခြင်း
         final_list = []
         counts = {}
-        for item in vpn_list:
-            code = item['country_code']
+        for vpn in sorted_vpns:
+            code = vpn['country_code']
             counts[code] = counts.get(code, 0) + 1
-            if counts[code] <= 5:  # တစ်နိုင်ငံလျှင် အမြန်ဆုံး ၅ လိုင်းစီသာပြမည်
-                final_list.append(item)
-            if len(final_list) >= 30: # စုစုပေါင်း Premium အပုဒ်ရေ ၃၀ သာ ပြသမည်
+            if counts[code] <= 4: # တစ်နိုင်ငံလျှင် အကောင်းဆုံးဆာဗာ ၄ ခုစီသာပြမည်
+                final_list.append(vpn)
+            if len(final_list) >= 20:
                 break
+
+        for v in final_list:
+            v.pop('speed_raw', None)
 
         return jsonify({"status": "success", "data": final_list})
         
