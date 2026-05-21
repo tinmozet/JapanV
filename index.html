@@ -74,19 +74,38 @@
 
     // Base64 ကီးကို .ovpn ဖိုင်အဖြစ် ပြောင်းလဲပြီး ဖုန်းထဲ ဒေါင်းလုဒ်ချပေးမည့် လုပ်ဆောင်ချက်
     function downloadConfig(host, base64Str) {
-        try {
-            const decodedConfig = atob(base64Str);
-            const blob = new Blob([decodedConfig], { type: 'application/x-openvpn-profile' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${host}_free_vpn.ovpn`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch(e) {
-            alert("ဖိုင်ထုတ်ယူရာတွင် အမှားအယွင်းရှိသွားပါသည် ဆရာ။");
+    try {
+        // Base64 ကို Binary အဖြစ် ပြောင်းလဲခြင်း
+        const byteCharacters = atob(base64Str.trim());
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
         }
+        const byteArray = new Uint8Array(byteNumbers);
+        
+        // ဖုန်းတိုင်း၊ Browser တိုင်း သိရှိနိုင်မည့် Standard Binary Octet-Stream အဖြစ် ပြောင်းလဲခြင်း
+        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${host}_free_vpn.ovpn`;
+        
+        // Browser လုံခြုံရေးကျော်လွှားရန် link ကို Body ထဲ ခေတ္တထည့်သွင်းပြီးမှ နှိပ်ခိုင်းခြင်း
+        document.body.appendChild(link);
+        link.click();
+        
+        // နှိပ်ပြီးလျှင် ပြန်ဖျက်ပစ်ခြင်း
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }, 100);
+
+    } catch(e) {
+        alert("ဖိုင်ထုတ်ယူရာတွင် အမှားအယွင်းရှိသွားပါသည် ဆရာ။ ဒေတာ မပြည့်စုံခြင်းကြောင့် ဖြစ်နိုင်ပါသည်။");
+        console.error(e);
     }
+}
+
 
     // အက်ပ်ပွင့်ပွင့်ချင်း အလိုအလျောက် ရှာခိုင်းခြင်း
     window.onload = fetchVPNKeys;
